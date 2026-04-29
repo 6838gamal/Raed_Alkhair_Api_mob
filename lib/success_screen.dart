@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class SuccessScreen extends StatelessWidget {
+import 'l10n/strings.dart';
+
+class SuccessScreen extends ConsumerWidget {
   final String orderId;
   const SuccessScreen({super.key, required this.orderId});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color(0xFF9C27B0),
         foregroundColor: Colors.white,
-        title: const Text('شكراً'),
+        title: Text(t(ref, 'thanks')),
         centerTitle: true,
       ),
       body: Padding(
@@ -21,16 +24,16 @@ class SuccessScreen extends StatelessWidget {
           children: [
             const Icon(Icons.check_circle, color: Color(0xFF1DE9B6), size: 96),
             const SizedBox(height: 30),
-            const Text('شكراً لطلبك',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87)),
+            Text(t(ref, 'thanks_for_order'),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87)),
             const SizedBox(height: 10),
-            Text('رقم طلبك $orderId',
+            Text('${t(ref, 'your_order_no')} $orderId',
                 style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF673AB7))),
             const SizedBox(height: 40),
-            const Text(
-              "سيتم معالجة طلبك في غضون 24 ساعة\nشاكرين لك ثقتك بنا\n'شركة رائد الخير'",
+            Text(
+              t(ref, 'order_processed_24h'),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.black54, height: 1.6),
+              style: const TextStyle(fontSize: 16, color: Colors.black54, height: 1.6),
             ),
             const Spacer(),
             SizedBox(
@@ -41,8 +44,8 @@ class SuccessScreen extends StatelessWidget {
                     backgroundColor: const Color(0xFF6F5CC3),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25))),
                 onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
-                child: const Text('متابعة إلى الصفحة الرئيسية',
-                    style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                child: Text(t(ref, 'continue_to_home'),
+                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 30),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'l10n/strings.dart';
 import 'state/providers.dart';
 import 'success_screen.dart';
 
@@ -26,7 +27,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final cart = ref.read(cartServiceProvider);
     if (cart.items.isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('السلة فارغة')));
+          .showSnackBar(SnackBar(content: Text(t(ref, 'cart_empty'))));
       return;
     }
     setState(() => _submitting = true);
@@ -36,7 +37,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     setState(() => _submitting = false);
     if (result == null) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('فشل إرسال الطلب')));
+          .showSnackBar(SnackBar(content: Text(t(ref, 'send_failed'))));
       return;
     }
     ref.read(cartTickProvider.notifier).bump();
@@ -59,7 +60,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF9C27B0),
         foregroundColor: Colors.white,
-        title: const Text('تأكيد الطلب'),
+        title: Text(t(ref, 'confirm_order')),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -68,14 +69,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           children: [
             _summaryCard(cart, user),
             const SizedBox(height: 16),
-            _readonlyField('طريقة الدفع', widget.paymentMethod == 'member' ? 'سعر العضو' : 'سعر غير العضو'),
+            _readonlyField(
+                t(ref, 'payment_method'),
+                widget.paymentMethod == 'member'
+                    ? t(ref, 'member_price')
+                    : t(ref, 'non_member_price')),
             const SizedBox(height: 12),
             TextField(
               controller: _deliveryFeeCtrl,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              textAlign: TextAlign.right,
               decoration: InputDecoration(
-                labelText: 'أجور التوصيل',
+                labelText: t(ref, 'delivery_fee'),
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -92,8 +96,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 onPressed: _submitting ? null : _submit,
                 child: _submitting
                     ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('إرسال الطلب',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    : Text(t(ref, 'send_order'),
+                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -110,10 +114,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)]),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('المشتري: ${user?.fullName ?? '—'}', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text('رقم العضوية: ${user?.memberNumber ?? '—'}'),
+          Text('${t(ref, 'buyer')}: ${user?.fullName ?? '—'}',
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text('${t(ref, 'membership_no')}: ${user?.memberNumber ?? '—'}'),
           const Divider(),
           ...cart.items.map<Widget>((item) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -123,16 +128,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     Text('×${item.quantity}'),
                     Expanded(
                         child: Text(item.product.name,
-                            textAlign: TextAlign.right,
+                            textAlign: TextAlign.end,
                             overflow: TextOverflow.ellipsis)),
                   ],
                 ),
               )),
           const Divider(),
-          Text('عدد الأصناف: ${cart.items.length}'),
-          Text('مجموع النقاط: ${cart.totalPV.toStringAsFixed(1)}pv'),
-          Text('السعر للعضو: ${cart.totalMember.toStringAsFixed(3)}'),
-          Text('السعر لغير العضو: ${cart.totalNonMember.toStringAsFixed(3)}'),
+          Text('${t(ref, 'item_count')}: ${cart.items.length}'),
+          Text('${t(ref, 'total_pv')}: ${cart.totalPV.toStringAsFixed(1)}pv'),
+          Text('${t(ref, 'price_for_member')}: ${cart.totalMember.toStringAsFixed(3)}'),
+          Text('${t(ref, 'price_for_non_member')}: ${cart.totalNonMember.toStringAsFixed(3)}'),
         ],
       ),
     );
@@ -145,7 +150,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-      child: Text(value, textAlign: TextAlign.right),
+      child: Text(value),
     );
   }
 }

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'l10n/strings.dart';
+import 'state/locale_provider.dart';
 import 'state/providers.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
-  final Function(Locale) onLanguageChange;
-  const SignUpScreen({super.key, required this.onLanguageChange});
+  const SignUpScreen({super.key});
 
   @override
   ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
@@ -38,11 +39,11 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         _phoneCtrl.text.trim().isEmpty ||
         _passCtrl.text.isEmpty ||
         _branchId == null) {
-      _snack('الرجاء تعبئة كل الحقول الإلزامية واختيار الفرع');
+      _snack(t(ref, 'fill_all_required'));
       return;
     }
     if (_passCtrl.text != _confirmCtrl.text) {
-      _snack('كلمتا السر غير متطابقتين');
+      _snack(t(ref, 'passwords_no_match'));
       return;
     }
     setState(() => _loading = true);
@@ -61,7 +62,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     if (result.success) {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
-      _snack(result.message ?? 'فشل إنشاء الحساب');
+      _snack(result.message ?? t(ref, 'signup_failed'));
     }
   }
 
@@ -71,7 +72,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String lang = Localizations.localeOf(context).languageCode;
+    final lang = ref.watch(localeProvider).languageCode;
     final branchesAsync = ref.watch(branchesProvider);
 
     return Scaffold(
@@ -89,41 +90,38 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 child: Column(
                   children: [
                     const SizedBox(height: 50),
-                    const Text("إنشاء حساب جديد",
-                        style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                    Text(t(ref, 'signup_title'),
+                        style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 30),
-                    _buildInput(lang, "رقم العضوية", "Membership No", "ژمارەی ئەندامیەتی",
+                    _buildInput(lang, t(ref, 'membership_no'),
                         controller: _memberCtrl, keyboardType: TextInputType.number),
                     const SizedBox(height: 12),
-                    _buildInput(lang, "الاسم الكامل", "Full Name", "ناوی تەواو", controller: _nameCtrl),
+                    _buildInput(lang, t(ref, 'full_name'), controller: _nameCtrl),
                     const SizedBox(height: 12),
-                    _buildInput(lang, "رقم الموبايل", "Mobile Number", "ژمارەی مۆبایل",
+                    _buildInput(lang, t(ref, 'mobile_number'),
                         controller: _phoneCtrl, keyboardType: TextInputType.phone),
                     const SizedBox(height: 12),
-                    _buildInput(lang, "العنوان (اختياري)", "Address (optional)", "ناونیشان", controller: _addressCtrl),
+                    _buildInput(lang, t(ref, 'address_optional'), controller: _addressCtrl),
                     const SizedBox(height: 12),
                     branchesAsync.when(
-                      data: (list) => _branchDropdown(list.map((b) => MapEntry(b.id, b.name)).toList()),
+                      data: (list) => _branchDropdown(lang, list.map((b) => MapEntry(b.id, b.name)).toList()),
                       loading: () => const Center(
                           child: Padding(
                               padding: EdgeInsets.all(8.0),
                               child: CircularProgressIndicator(color: Colors.white))),
-                      error: (e, _) => Text('تعذر جلب الفروع', style: TextStyle(color: Colors.red.shade100)),
+                      error: (e, _) => Text(t(ref, 'cant_load_branches'),
+                          style: TextStyle(color: Colors.red.shade100)),
                     ),
                     const SizedBox(height: 12),
-                    _buildInput(lang, "كلمة السر", "Password", "وشەی نهێنی",
+                    _buildInput(lang, t(ref, 'password'),
                         isPass: true, controller: _passCtrl),
                     const SizedBox(height: 12),
-                    _buildInput(lang, "تأكيد كلمة السر", "Confirm Password", "دوپاتکردنەوەی وشەی نهێنی",
+                    _buildInput(lang, t(ref, 'confirm_password'),
                         isPass: true, controller: _confirmCtrl),
                     const SizedBox(height: 24),
-                    _buildBtn(lang, "انشاء مستخدم جديد", "Sign Up", "تۆمارکردن",
-                        _loading ? null : _submit,
-                        loading: _loading),
+                    _buildBtn(t(ref, 'sign_up'), _loading ? null : _submit, loading: _loading),
                     const SizedBox(height: 12),
-                    _buildBtn(lang, "تسجيل الدخول", "Login", "چوونەژوورەوە", () {
-                      Navigator.pop(context);
-                    }, isSecondary: true),
+                    _buildBtn(t(ref, 'login'), () => Navigator.pop(context), isSecondary: true),
                     const SizedBox(height: 30),
                   ],
                 ),
@@ -135,7 +133,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     );
   }
 
-  Widget _branchDropdown(List<MapEntry<int, String>> branches) {
+  Widget _branchDropdown(String lang, List<MapEntry<int, String>> branches) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -146,7 +144,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         child: DropdownButton<int>(
           isExpanded: true,
           value: _branchId,
-          hint: const Text('اختر الفرع المفضل', textAlign: TextAlign.right),
+          hint: Text(t(ref, 'select_branch'),
+              textAlign: lang == 'en' ? TextAlign.left : TextAlign.right),
           items: branches
               .map((b) => DropdownMenuItem<int>(value: b.key, child: Text(b.value)))
               .toList(),
@@ -156,7 +155,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     );
   }
 
-  Widget _buildInput(String lang, String ar, String en, String ku,
+  Widget _buildInput(String lang, String hint,
       {bool isPass = false, TextEditingController? controller, TextInputType? keyboardType}) {
     return TextField(
       controller: controller,
@@ -164,7 +163,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       keyboardType: keyboardType,
       textAlign: lang == 'en' ? TextAlign.left : TextAlign.right,
       decoration: InputDecoration(
-        hintText: lang == 'ar' ? ar : (lang == 'ku' ? ku : en),
+        hintText: hint,
         filled: true,
         fillColor: Colors.white.withOpacity(0.85),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
@@ -173,7 +172,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     );
   }
 
-  Widget _buildBtn(String lang, String ar, String en, String ku, VoidCallback? press,
+  Widget _buildBtn(String label, VoidCallback? press,
       {bool isSecondary = false, bool loading = false}) {
     return SizedBox(
       width: double.infinity,
@@ -188,8 +187,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         ),
         child: loading
             ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-            : Text(lang == 'ar' ? ar : (lang == 'ku' ? ku : en),
-                style: const TextStyle(color: Colors.white, fontSize: 18)),
+            : Text(label, style: const TextStyle(color: Colors.white, fontSize: 18)),
       ),
     );
   }

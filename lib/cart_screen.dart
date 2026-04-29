@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'checkout_screen.dart';
+import 'l10n/strings.dart';
 import 'state/providers.dart';
 
 class CartScreen extends ConsumerStatefulWidget {
@@ -51,11 +52,11 @@ class _CartScreenState extends ConsumerState<CartScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF9C27B0),
         foregroundColor: Colors.white,
-        title: const Text('سلة'),
+        title: Text(t(ref, 'cart')),
         actions: [_buildCartBadge(cart.count)],
       ),
       body: items.isEmpty
-          ? const Center(child: Text('السلة فارغة', style: TextStyle(fontSize: 18, color: Colors.grey)))
+          ? Center(child: Text(t(ref, 'cart_empty'), style: const TextStyle(fontSize: 18, color: Colors.grey)))
           : Column(
               children: [
                 _buildDeleteAllButton(),
@@ -91,7 +92,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                                 Text("${item.product.pvValue}pv",
                                     style: const TextStyle(color: Colors.grey)),
                                 Text(
-                                    "مجموع: ${item.pvSubtotal.toStringAsFixed(1)}pv",
+                                    "${t(ref, 'subtotal')}: ${item.pvSubtotal.toStringAsFixed(1)}pv",
                                     style: const TextStyle(color: Colors.grey)),
                               ],
                             ),
@@ -139,11 +140,11 @@ class _CartScreenState extends ConsumerState<CartScreen> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF8E24AA),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         ),
         onPressed: _busy ? null : _clearAll,
-        child: const Text('حذف السلة',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+        child: Text(t(ref, 'clear_cart'),
+            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -166,26 +167,26 @@ class _CartScreenState extends ConsumerState<CartScreen> {
       child: Column(
         children: [
           Align(
-            alignment: Alignment.centerRight,
-            child: Text('مجموع النقاط: PV ${pv.toStringAsFixed(1)}',
+            alignment: AlignmentDirectional.centerEnd,
+            child: Text('${t(ref, 'total_pv')}: PV ${pv.toStringAsFixed(1)}',
                 style: const TextStyle(
                     fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey)),
           ),
           Align(
-            alignment: Alignment.centerRight,
-            child: Text('سعر العضو: ${member.toStringAsFixed(3)}',
+            alignment: AlignmentDirectional.centerEnd,
+            child: Text('${t(ref, 'member_price')}: ${member.toStringAsFixed(3)}',
                 style: const TextStyle(fontSize: 14, color: Colors.blueGrey)),
           ),
           Align(
-            alignment: Alignment.centerRight,
-            child: Text('سعر غير العضو: ${nonMember.toStringAsFixed(3)}',
+            alignment: AlignmentDirectional.centerEnd,
+            child: Text('${t(ref, 'non_member_price')}: ${nonMember.toStringAsFixed(3)}',
                 style: const TextStyle(fontSize: 14, color: Colors.blueGrey)),
           ),
           const SizedBox(height: 15),
-          _actionBtn('اكمال عملية الشراء بسعر العضو', const Color(0xFF1DE9B6),
+          _actionBtn(t(ref, 'checkout_member_price'), const Color(0xFF1DE9B6),
               () => _goCheckout('member')),
           const SizedBox(height: 10),
-          _actionBtn('اكمال عملية الشراء بسعر غير العضو', const Color(0xFF9C27B0),
+          _actionBtn(t(ref, 'checkout_non_member_price'), const Color(0xFF9C27B0),
               () => _goCheckout('non_member')),
         ],
       ),

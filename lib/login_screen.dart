@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'l10n/strings.dart';
+import 'state/locale_provider.dart';
 import 'state/providers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  final Function(Locale) onLanguageChange;
-  const LoginScreen({super.key, required this.onLanguageChange});
+  const LoginScreen({super.key});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -25,7 +26,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _doLogin() async {
     if (_memberCtrl.text.trim().isEmpty || _passwordCtrl.text.isEmpty) {
-      _showSnack('الرجاء إدخال رقم العضوية وكلمة السر');
+      _showSnack(t(ref, 'login_required_fields'));
       return;
     }
     setState(() => _loading = true);
@@ -39,7 +40,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (result.success) {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
-      _showSnack(result.message ?? 'فشل تسجيل الدخول');
+      _showSnack(result.message ?? t(ref, 'login_failed'));
     }
   }
 
@@ -47,9 +48,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  void _setLang(String code) {
+    ref.read(localeProvider.notifier).setLocale(code);
+  }
+
   @override
   Widget build(BuildContext context) {
-    String lang = Localizations.localeOf(context).languageCode;
+    final lang = ref.watch(localeProvider).languageCode;
 
     return Scaffold(
       body: Stack(
@@ -67,32 +72,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 children: [
                   const SizedBox(height: 60),
-                  const Text("شركة رائد الخير",
-                      style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-                  const Text("الوكيل الحصري لشركة DXN العالمية في العراق",
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                  Text(t(ref, 'app_title'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                  Text(t(ref, 'app_subtitle'),
+                      style: const TextStyle(color: Colors.white70, fontSize: 14),
                       textAlign: TextAlign.center),
                   const Spacer(),
-                  _buildInput(lang, "رقم العضوية", "Membership No", "ژمارەی ئەندامیەتی",
+                  _buildInput(lang, t(ref, 'membership_no'),
                       controller: _memberCtrl, keyboardType: TextInputType.number),
                   const SizedBox(height: 15),
-                  _buildInput(lang, "كلمة السر", "Password", "وشەی نهێنی",
+                  _buildInput(lang, t(ref, 'password'),
                       isPass: true, controller: _passwordCtrl),
                   const SizedBox(height: 30),
-                  _buildBtn(lang, "تسجيل الدخول", "Login", "چوونەژوورەوە",
-                      _loading ? null : _doLogin,
-                      loading: _loading),
+                  _buildBtn(t(ref, 'login'), _loading ? null : _doLogin, loading: _loading),
                   const SizedBox(height: 15),
-                  _buildBtn(lang, "انشاء حساب", "Create Account", "دروستکردنی هەژمار", () {
+                  _buildBtn(t(ref, 'create_account'), () {
                     Navigator.pushNamed(context, '/signup');
                   }, isSecondary: true),
                   const SizedBox(height: 40),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _langOption("العربية", () => widget.onLanguageChange(const Locale('ar'))),
-                      _langOption("English", () => widget.onLanguageChange(const Locale('en'))),
-                      _langOption("Kurdî", () => widget.onLanguageChange(const Locale('ku'))),
+                      _langOption('Kurdî', 'ku', lang),
+                      _langOption('English', 'en', lang),
+                      _langOption('العربية', 'ar', lang),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -105,7 +109,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildInput(String lang, String ar, String en, String ku,
+  Widget _buildInput(String lang, String hint,
       {bool isPass = false, TextEditingController? controller, TextInputType? keyboardType}) {
     return TextField(
       controller: controller,
@@ -113,7 +117,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       keyboardType: keyboardType,
       textAlign: lang == 'en' ? TextAlign.left : TextAlign.right,
       decoration: InputDecoration(
-        hintText: lang == 'ar' ? ar : (lang == 'ku' ? ku : en),
+        hintText: hint,
         filled: true,
         fillColor: Colors.white.withOpacity(0.85),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
@@ -122,7 +126,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildBtn(String lang, String ar, String en, String ku, VoidCallback? press,
+  Widget _buildBtn(String label, VoidCallback? press,
       {bool isSecondary = false, bool loading = false}) {
     return SizedBox(
       width: double.infinity,
@@ -137,13 +141,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         child: loading
             ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-            : Text(lang == 'ar' ? ar : (lang == 'ku' ? ku : en),
-                style: const TextStyle(color: Colors.white, fontSize: 18)),
+            : Text(label, style: const TextStyle(color: Colors.white, fontSize: 18)),
       ),
     );
   }
 
-  Widget _langOption(String label, VoidCallback tap) {
-    return TextButton(onPressed: tap, child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 13)));
+  Widget _langOption(String label, String code, String currentLang) {
+    final selected = currentLang == code;
+    return TextButton(
+      onPressed: () => _setLang(code),
+      child: Text(label,
+          style: TextStyle(
+              color: selected ? Colors.amber : Colors.white,
+              fontSize: 13,
+              fontWeight: selected ? FontWeight.bold : FontWeight.normal)),
+    );
   }
 }

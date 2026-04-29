@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../categories_screen.dart';
+import '../l10n/strings.dart';
 import '../state/providers.dart';
 
 class BranchesTab extends ConsumerWidget {
@@ -14,12 +15,13 @@ class BranchesTab extends ConsumerWidget {
     return branchesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => _ErrorView(
-        message: 'تعذّر جلب الفروع\n$e',
+        message: '${t(ref, 'cant_load_branches_long')}\n$e',
+        retryLabel: t(ref, 'retry'),
         onRetry: () => ref.invalidate(branchesProvider),
       ),
       data: (branches) {
         if (branches.isEmpty) {
-          return const Center(child: Text('لا توجد فروع متاحة'));
+          return Center(child: Text(t(ref, 'no_branches')));
         }
         return GridView.builder(
           padding: const EdgeInsets.all(10),
@@ -57,8 +59,9 @@ class BranchesTab extends ConsumerWidget {
 
 class _ErrorView extends StatelessWidget {
   final String message;
+  final String retryLabel;
   final VoidCallback onRetry;
-  const _ErrorView({required this.message, required this.onRetry});
+  const _ErrorView({required this.message, required this.retryLabel, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +73,7 @@ class _ErrorView extends StatelessWidget {
           const SizedBox(height: 12),
           Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          ElevatedButton(onPressed: onRetry, child: const Text('إعادة المحاولة')),
+          ElevatedButton(onPressed: onRetry, child: Text(retryLabel)),
         ],
       ),
     );

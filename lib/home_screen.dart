@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'cart_screen.dart';
+import 'l10n/strings.dart';
+import 'state/locale_provider.dart';
 import 'state/providers.dart';
 import 'tabs/branches_tab.dart';
 import 'tabs/main_tab.dart';
 import 'tabs/profile_tab.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  final Function(Locale) onLanguageChange;
-  const HomeScreen({super.key, required this.onLanguageChange});
+  const HomeScreen({super.key});
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -20,7 +21,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String appBarTitle = _selectedIndex == 1 ? "اختر فرع" : "رائد الخير";
+    final appBarTitle =
+        _selectedIndex == 1 ? t(ref, 'tab_branches') : t(ref, 'app_title');
     final cart = ref.read(cartServiceProvider);
     ref.watch(cartTickProvider);
 
@@ -49,10 +51,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         selectedItemColor: const Color(0xFF9C27B0),
         unselectedItemColor: Colors.grey,
         onTap: (index) => setState(() => _selectedIndex = index),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: "الرئيسية"),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), label: "اختر فرع"),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: "بروفايل"),
+        items: [
+          BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), label: t(ref, 'tab_home')),
+          BottomNavigationBarItem(icon: const Icon(Icons.menu_book_outlined), label: t(ref, 'tab_branches')),
+          BottomNavigationBarItem(icon: const Icon(Icons.person_outline), label: t(ref, 'tab_profile')),
         ],
       ),
     );
@@ -81,6 +83,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildPopupMenu(BuildContext context) {
+    final currentLang = ref.watch(localeProvider).languageCode;
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert),
       onSelected: (val) async {
@@ -89,17 +92,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (!mounted) return;
           Navigator.pushReplacementNamed(context, '/');
         } else {
-          widget.onLanguageChange(Locale(val));
+          await ref.read(localeProvider.notifier).setLocale(val);
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(value: 'ku', child: Text("كوردى")),
-        const PopupMenuItem(value: 'ar', child: Text("عربي")),
-        const PopupMenuItem(value: 'en', child: Text("English")),
+        _langItem('ku', 'Kurdî', currentLang),
+        _langItem('ar', 'العربية', currentLang),
+        _langItem('en', 'English', currentLang),
         const PopupMenuDivider(),
-        const PopupMenuItem(
-            value: 'logout', child: Text("تسجيل الخروج", style: TextStyle(color: Colors.red))),
+        PopupMenuItem(
+            value: 'logout',
+            child: Row(
+              children: [
+                const Icon(Icons.logout, size: 18, color: Colors.red),
+                const SizedBox(width: 8),
+                Text(t(ref, 'logout'), style: const TextStyle(color: Colors.red)),
+              ],
+            )),
       ],
+    );
+  }
+
+  PopupMenuItem<String> _langItem(String code, String label, String currentLang) {
+    final selected = currentLang == code;
+    return PopupMenuItem<String>(
+      value: code,
+      child: Row(
+        children: [
+          Icon(selected ? Icons.check_circle : Icons.language,
+              size: 18, color: selected ? const Color(0xFF9C27B0) : Colors.grey),
+          const SizedBox(width: 8),
+          Text(label,
+              style: TextStyle(
+                  color: selected ? const Color(0xFF9C27B0) : Colors.black87,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.normal)),
+        ],
+      ),
     );
   }
 }

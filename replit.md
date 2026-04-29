@@ -15,9 +15,18 @@ The backend is a FastAPI server-rendered app that uses HTTP cookie sessions and 
 - `lib/models/` — `Branch`, `Category`, `Product`, `CartItem`, `AppUser`
 - `lib/services/` — `ApiClient` (Dio), `AuthService`, `CatalogService`, `CartService`
 - `lib/state/providers.dart` — Riverpod providers (`branchesProvider`, `categoriesProvider`, `productsProvider`, `cartTickProvider`, etc.)
+- `lib/state/locale_provider.dart` — Riverpod `StateNotifier<Locale>` persisted in SharedPreferences (ar/en/ku)
+- `lib/l10n/strings.dart` — Centralised translation map + `t(ref, key)` helper used by every screen
 - `lib/*.dart` — screens (`login_screen`, `signup_screen`, `home_screen`, `categories_screen`, `sub_category_screen`, `order_screen`, `cart_screen`, `checkout_screen`, `success_screen`)
 - `lib/tabs/` — `branches_tab`, `main_tab`, `profile_tab`
 - `web/`, `pubspec.yaml`, `assets/images/` — standard Flutter web assets
+
+## Localisation (AR / EN / KU)
+- Language is global state via `localeProvider` (Riverpod). Selection is saved in SharedPreferences so it survives reloads.
+- All UI text comes from `lib/l10n/strings.dart`; call `t(ref, 'key')` from any `ConsumerWidget`/`ConsumerState` to read the current language's value.
+- `MaterialApp.builder` wraps the whole tree in a `Directionality` widget so `ar`/`ku` flip to RTL automatically and `en` switches to LTR.
+- `localeResolutionCallback` falls back to Arabic for `ku` so Material's built-in widgets (date pickers, etc.) still render — our own copy comes from the strings table.
+- Switchers exist on the login screen (bottom row), the home screen (top-left popup menu) and inside the profile tab (chip selector). Changing the language from any of them updates every screen instantly.
 
 ## Tech Stack
 - Flutter 3.32 / Dart 3.8 (Nix-installed)

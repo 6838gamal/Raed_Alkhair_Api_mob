@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'cart_screen.dart';
+import 'l10n/strings.dart';
 import 'models/product.dart';
 import 'state/providers.dart';
 
@@ -19,7 +20,8 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
 
   Future<void> _addToCart({bool goToCart = false}) async {
     if (_quantity <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('اختر كمية أكبر من صفر')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(t(ref, 'qty_min_one'))));
       return;
     }
     setState(() => _adding = true);
@@ -30,14 +32,14 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
     if (ok) {
       ref.read(cartTickProvider.notifier).bump();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تمت إضافة ${widget.product.name} إلى السلة')),
+        SnackBar(content: Text('${t(ref, 'added_to_cart')}: ${widget.product.name}')),
       );
       if (goToCart) {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen()));
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر إضافة المنتج. سجّل الدخول أولاً')),
+        SnackBar(content: Text(t(ref, 'add_failed_login_first'))),
       );
     }
   }
@@ -78,9 +80,9 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text("سعر العضو: ${p.priceMember}",
+                          Text("${t(ref, 'member_price')}: ${p.priceMember}",
                               style: const TextStyle(color: Colors.blueGrey)),
-                          Text("سعر غير العضو: ${p.priceNonMember}",
+                          Text("${t(ref, 'non_member_price')}: ${p.priceNonMember}",
                               style: const TextStyle(color: Colors.blueGrey)),
                         ],
                       ),
@@ -99,7 +101,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Text(
-                p.description.isEmpty ? 'لا يوجد وصف لهذا المنتج' : p.description,
+                p.description.isEmpty ? t(ref, 'no_description') : p.description,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 15, color: Colors.grey[700], height: 1.5),
               ),
@@ -130,18 +132,18 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
               child: Column(
                 children: [
                   _actionButton(
-                      _adding ? 'جارٍ الإضافة…' : 'شراء (إضافة وفتح السلة)',
+                      _adding ? t(ref, 'adding') : t(ref, 'buy_open_cart'),
                       const Color(0xFF1DE9B6),
                       _adding ? null : () => _addToCart(goToCart: true)),
                   const SizedBox(height: 10),
                   Row(
                     children: [
                       Expanded(
-                          child: _actionButton('إضافة إلى السلة', const Color(0xFF673AB7),
+                          child: _actionButton(t(ref, 'add_to_cart'), const Color(0xFF673AB7),
                               _adding ? null : () => _addToCart())),
                       const SizedBox(width: 10),
                       Expanded(
-                          child: _actionButton('فتح السلة', const Color(0xFFFFA000), () {
+                          child: _actionButton(t(ref, 'open_cart'), const Color(0xFFFFA000), () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen()));
                       })),
                     ],
@@ -177,7 +179,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
       height: 50,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-            backgroundColor: color, shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
+            backgroundColor: color, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
         onPressed: onPressed,
         child: Text(title,
             style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),

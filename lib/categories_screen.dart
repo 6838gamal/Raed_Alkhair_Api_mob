@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'cart_screen.dart';
+import 'l10n/strings.dart';
 import 'state/providers.dart';
 import 'sub_category_screen.dart';
 
@@ -35,18 +36,18 @@ class CategoriesScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
               const SizedBox(height: 12),
-              Text('تعذر جلب الفئات\n$e', textAlign: TextAlign.center),
+              Text('${t(ref, 'cant_load_categories')}\n$e', textAlign: TextAlign.center),
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () => ref.invalidate(categoriesProvider(branchId)),
-                child: const Text('إعادة المحاولة'),
+                child: Text(t(ref, 'retry')),
               )
             ],
           ),
         ),
         data: (categories) {
           if (categories.isEmpty) {
-            return const Center(child: Text('لا توجد فئات لهذا الفرع'));
+            return Center(child: Text(t(ref, 'no_categories')));
           }
           return ListView.builder(
             padding: const EdgeInsets.all(12),

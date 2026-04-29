@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'cart_screen.dart';
+import 'l10n/strings.dart';
 import 'models/product.dart';
 import 'order_screen.dart';
 import 'state/providers.dart';
@@ -36,18 +37,18 @@ class SubCategoryScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
               const SizedBox(height: 12),
-              Text('تعذر جلب المنتجات\n$e', textAlign: TextAlign.center),
+              Text('${t(ref, 'cant_load_products')}\n$e', textAlign: TextAlign.center),
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () => ref.invalidate(productsProvider(categoryId)),
-                child: const Text('إعادة المحاولة'),
+                child: Text(t(ref, 'retry')),
               )
             ],
           ),
         ),
         data: (products) {
           if (products.isEmpty) {
-            return const Center(child: Text('لا توجد منتجات في هذه الفئة'));
+            return Center(child: Text(t(ref, 'no_products')));
           }
           return GridView.builder(
             padding: const EdgeInsets.all(10),
@@ -58,14 +59,14 @@ class SubCategoryScreen extends ConsumerWidget {
               mainAxisSpacing: 10,
             ),
             itemCount: products.length,
-            itemBuilder: (context, index) => _productItem(context, products[index]),
+            itemBuilder: (context, index) => _productItem(context, ref, products[index]),
           );
         },
       ),
     );
   }
 
-  Widget _productItem(BuildContext context, Product p) {
+  Widget _productItem(BuildContext context, WidgetRef ref, Product p) {
     return InkWell(
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => OrderScreen(product: p)));
@@ -104,8 +105,8 @@ class SubCategoryScreen extends ConsumerWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  const Text("يتم التوصيل عادة خلال 72 ساعة",
-                      style: TextStyle(fontSize: 9, color: Colors.grey),
+                  Text(t(ref, 'delivery_72h'),
+                      style: const TextStyle(fontSize: 9, color: Colors.grey),
                       textAlign: TextAlign.center),
                 ],
               ),
