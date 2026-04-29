@@ -27,7 +27,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "$HOME/.pub-cache/bin/dhttpd --host 0.0.0.0 --port 5000 --path build/web"
+args = "dart run tool/server.dart"
 waitForPort = 5000
 
 [[ports]]

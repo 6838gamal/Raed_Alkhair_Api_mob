@@ -1,56 +1,99 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class CheckoutScreen extends StatelessWidget {
-  const CheckoutScreen({super.key});
+import 'state/providers.dart';
+import 'success_screen.dart';
+
+class CheckoutScreen extends ConsumerStatefulWidget {
+  final String paymentMethod;
+  const CheckoutScreen({super.key, this.paymentMethod = 'member'});
+
+  @override
+  ConsumerState<CheckoutScreen> createState() => _CheckoutScreenState();
+}
+
+class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
+  final _deliveryFeeCtrl = TextEditingController(text: '0');
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _deliveryFeeCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final cart = ref.read(cartServiceProvider);
+    if (cart.items.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('السلة فارغة')));
+      return;
+    }
+    setState(() => _submitting = true);
+    final fee = double.tryParse(_deliveryFeeCtrl.text.trim()) ?? 0;
+    final result = await cart.checkout(paymentMethod: widget.paymentMethod, deliveryFee: fee);
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    if (result == null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('فشل إرسال الطلب')));
+      return;
+    }
+    ref.read(cartTickProvider.notifier).bump();
+    final orderId = result['order_id']?.toString() ?? result['id']?.toString() ?? '—';
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => SuccessScreen(orderId: orderId)),
+      (route) => route.isFirst,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final cart = ref.read(cartServiceProvider);
+    ref.watch(cartTickProvider);
+    final user = ref.read(authServiceProvider).currentUser;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // خلفية رمادية فاتحة جداً كما في الصورة
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: const Color(0xFF9C27B0),
         foregroundColor: Colors.white,
-        title: const Text("اضافة عنوان"),
-        actions: [
-          _buildCartBadge(4), // عدد العناصر الظاهر في صورتك هو 4
-        ],
+        title: const Text('تأكيد الطلب'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildInputField("رقم العضوية"),
-            const SizedBox(height: 15),
-            _buildInputField("الاسم"),
-            const SizedBox(height: 15),
-            _buildInputField("اونلاين النجف"), // هذا الحقل يبدو أنه لاختيار الفرع أو المنطقة
-            const SizedBox(height: 15),
-            _buildInputField("العنوان"),
-            const SizedBox(height: 15),
-            _buildInputField("رقم التلفون"),
-            const SizedBox(height: 15),
-            _buildInputField("الملاحظات", maxLines: 5), // حقل الملاحظات أكبر قليلاً
-            
-            const SizedBox(height: 40),
-            
-            // زر اكمال عملية الشراء
+            _summaryCard(cart, user),
+            const SizedBox(height: 16),
+            _readonlyField('طريقة الدفع', widget.paymentMethod == 'member' ? 'سعر العضو' : 'سعر غير العضو'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _deliveryFeeCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              textAlign: TextAlign.right,
+              decoration: InputDecoration(
+                labelText: 'أجور التوصيل',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+            const SizedBox(height: 30),
             SizedBox(
-              width: double.infinity,
               height: 55,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6F5CC3), // لون بنفسجي مائل للأزرق كما في الصورة
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30), // زوايا دائرية كبيرة للزر
-                  ),
+                  backgroundColor: const Color(0xFF6F5CC3),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 ),
-                onPressed: () {
-                  // منطق إنهاء الطلب وإرساله لقاعدة البيانات
-                },
-                child: const Text(
-                  "اكمال عملية الشراء",
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                onPressed: _submitting ? null : _submit,
+                child: _submitting
+                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('إرسال الطلب',
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -59,44 +102,50 @@ class CheckoutScreen extends StatelessWidget {
     );
   }
 
-  // ويدجت موحدة لبناء حقول الإدخال لتطابق التصميم
-  Widget _buildInputField(String hint, {int maxLines = 1}) {
-    return TextField(
-      maxLines: maxLines,
-      textAlign: TextAlign.right, // الكتابة من اليمين
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.white),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF9C27B0)),
-        ),
+  Widget _summaryCard(cart, user) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text('المشتري: ${user?.fullName ?? '—'}', style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text('رقم العضوية: ${user?.memberNumber ?? '—'}'),
+          const Divider(),
+          ...cart.items.map<Widget>((item) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('×${item.quantity}'),
+                    Expanded(
+                        child: Text(item.product.name,
+                            textAlign: TextAlign.right,
+                            overflow: TextOverflow.ellipsis)),
+                  ],
+                ),
+              )),
+          const Divider(),
+          Text('عدد الأصناف: ${cart.items.length}'),
+          Text('مجموع النقاط: ${cart.totalPV.toStringAsFixed(1)}pv'),
+          Text('السعر للعضو: ${cart.totalMember.toStringAsFixed(3)}'),
+          Text('السعر لغير العضو: ${cart.totalNonMember.toStringAsFixed(3)}'),
+        ],
       ),
     );
   }
 
-  Widget _buildCartBadge(int count) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        IconButton(icon: const Icon(Icons.shopping_basket_outlined), onPressed: () {}),
-        Positioned(
-          right: 8, top: 8,
-          child: Container(
-            padding: const EdgeInsets.all(2),
-            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-            child: Text('$count', style: const TextStyle(color: Colors.white, fontSize: 10), textAlign: TextAlign.center),
-          ),
-        )
-      ],
+  Widget _readonlyField(String label, String value) {
+    return InputDecorator(
+      decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+      child: Text(value, textAlign: TextAlign.right),
     );
   }
 }
